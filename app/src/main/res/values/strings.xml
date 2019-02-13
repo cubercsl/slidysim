@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">slidysim</string>
+    <string name="_15puzzle">15PUZZLE</string>
+    <string name="scramble">SCRAMBLE!</string>
+    <string name="about">About</string>
+    <string name="exit">Exit</string>
+</resources>
