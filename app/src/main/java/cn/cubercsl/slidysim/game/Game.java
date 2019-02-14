@@ -110,6 +110,28 @@ public class Game {
     }
 
     /**
+     * @param num the permutation of the puzzle
+     * @return whether it is solvable
+     * @description: check whether the puzzle is solvable
+     */
+    private boolean isSolvable(Integer[] num) {
+        int sum = 0;
+        for (int i = 0; i < 16; i++) {
+            if (num[i].equals(0)) {
+                sum += 3 - i / 4;
+            } else {
+                for (int j = 0; j < i; j++) {
+                    if (num[j] > num[i]) {
+                        sum++;
+                    }
+                }
+            }
+        }
+//        Toast.makeText(MyApplication.getContext(), String.valueOf(sum), Toast.LENGTH_SHORT).show();
+        return (sum & 1) == 0;
+    }
+
+    /**
      * @description: scramble the puzzle
      */
     public void scramble() {
@@ -122,28 +144,17 @@ public class Game {
         Collections.shuffle(vector, random);
         Integer[] num = new Integer[vector.size()];
         vector.toArray(num);
-        int sum = 0;
-        for (int i = 0; i < 16; i++) {
-            if (num[i] == 0) {
-                sum += i / 4 + (i + 1) % 4;
-            } else {
-                for (int j = 0; j < i; j++) {
-                    if (num[j] < num[i]) {
-                        sum++;
-                    }
-                }
-            }
-        }
+
         /*
          * handle the parity.
          */
-        if ((sum & 1) != 0) {
+        if (!isSolvable(num)) {
             int r1 = random.nextInt(16);
-            if (num[r1] == 0) {
+            if (num[r1].equals(0)) {
                 r1 = (r1 + 1) % 16;
             }
             int r2 = random.nextInt(16);
-            while (r1 == r2 && num[r2] == 0) {
+            while (r1 == r2 || num[r2].equals(0)) {
                 r2 = (r2 + 1) % 16;
             }
             int t = num[r1];
@@ -156,7 +167,10 @@ public class Game {
         showCurrentState();
         state = SCRAMBLED;
         stepCount = 0;
-        System.err.println("Finished.");
+        if (isSolvable(num)) {
+            // if the puzzle is solvable,..
+            Toast.makeText(MyApplication.getContext(), "Scrambled!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**
