@@ -1,4 +1,6 @@
-package cn.cubercsl.slidysim;
+package cn.cubercsl.slidysim.game;
+
+import cn.cubercsl.slidysim.R;
 
 public class Config {
 

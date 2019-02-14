@@ -1,5 +1,7 @@
-package cn.cubercsl.slidysim;
+package cn.cubercsl.slidysim.game;
 
+import android.support.v7.widget.AppCompatTextView;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.Arrays;
@@ -7,85 +9,110 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Vector;
 
+import cn.cubercsl.slidysim.MyApplication;
+import cn.cubercsl.slidysim.R;
+
 public class Game {
 
     public static int FINISHED = 0;
     public static int SCRAMBLED = 1;
     public static int SOLVING = 2;
 
+    private SquareView[] squareViews;
+    private Integer[] currentState;
+    private Integer stepCount = 0;
+    private long startTime = 0L;
+    private long endTime = 0L;
+    private int state = FINISHED;
 
-    private static SquareView[] squareViews;
-    private static Integer[] currentState;
-    private static Integer stepCount = 0;
-    private static Long startTime = 0L;
-    private static Long endTime = 0L;
-    private static int state = FINISHED;
-
-    private Game() {
-
-    }
-
-    public static void setSquareViews(SquareView[] squareViews) {
-        Game.squareViews = squareViews;
-    }
-
-    public static void initialize() {
+    /**
+     * @param view the view of the game
+     * @description: construct a new game instance.
+     */
+    Game(View view) {
         System.err.println("Start initialize...");
         currentState = new Integer[16];
+        SquareListener squareListener = new SquareListener();
         System.arraycopy(Config.winState, 0, currentState, 0, 16);
+        squareViews = new SquareView[16];
+        try {
+            for (int i = 0; i < 16; i++) {
+                squareViews[i] = view.findViewById(R.id.class.getDeclaredField("square" + i).getInt(R.id.class));
+                squareViews[i].setOnClickListener(squareListener);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         showCurrentState();
         System.err.println("ok");
     }
 
-    public static void showCurrentState() {
+    /**
+     * @param row the row number of the cell (0-indexed)
+     * @param col the column number of the cell (0-indexed)
+     * @return the index of the cell in the array.
+     */
+    private static int indexOf(int row, int col) {
+        return row * 4 + col;
+    }
+
+    /**
+     * @description: refresh the UI.
+     */
+    private void showCurrentState() {
         for (int i = 0; i < 16; i++) {
             squareViews[i].setNum(currentState[i]);
         }
     }
 
-    public static boolean isWin() {
+    /**
+     * @return whether the puzzle is solved.
+     */
+    private boolean isSolved() {
         return Arrays.equals(currentState, Config.winState);
     }
 
-    public static int getStepCount() {
+    /**
+     * @return the step of the game.
+     */
+    int getStepCount() {
         return stepCount;
     }
 
-    public static void setStepCount(int stepCount) {
-        Game.stepCount = stepCount;
+    /**
+     * @return the result or current time of the solving..
+     */
+    long getResult() {
+        if (state == SOLVING) {
+            return System.currentTimeMillis() - startTime;
+        }
+        if (state == SCRAMBLED) {
+            return 0;
+        }
+        return endTime - startTime;
     }
 
-    public static long getStartTime() {
-        return startTime;
-    }
-
-    public static void setStartTime(long startTime) {
-        Game.startTime = startTime;
-    }
-
-    public static Long getEndTime() {
-        return endTime;
-    }
-
-    public static void setEndTime(Long endTime) {
-        Game.endTime = endTime;
-    }
-
-    public static int getState() {
+    /**
+     * @return the state of the game.
+     * @see Game#FINISHED,Game#SCRAMBLED.Game#SOLVING
+     */
+    int getState() {
         return state;
     }
 
-    public static void setState(int state) {
-        Game.state = state;
-    }
-
-    private static void updateStepCount() {
+    /**
+     * @description: if solving,update the step.
+     */
+    private void updateStepCount() {
         if (getState() == SOLVING) {
             stepCount++;
         }
     }
 
-    public static void scramble() {
+    /**
+     * @description: scramble the puzzle
+     */
+    public void scramble() {
         System.err.println("Scrambling...");
         Vector<Integer> vector = new Vector<>();
         for (int i = 0; i < 16; i++) {
@@ -107,7 +134,9 @@ public class Game {
                 }
             }
         }
-        // parity
+        /*
+         * handle the parity.
+         */
         if ((sum & 1) != 0) {
             int r1 = random.nextInt(16);
             if (num[r1] == 0) {
@@ -117,7 +146,6 @@ public class Game {
             while (r1 == r2 && num[r2] == 0) {
                 r2 = (r2 + 1) % 16;
             }
-            // swap
             int t = num[r1];
             num[r1] = num[r2];
             num[r2] = t;
@@ -126,27 +154,30 @@ public class Game {
         System.arraycopy(num, 0, currentState, 0, 16);
 
         showCurrentState();
-        setState(SCRAMBLED);
-        setStepCount(0);
+        state = SCRAMBLED;
+        stepCount = 0;
         System.err.println("Finished.");
     }
 
-    private static int indexOf(int row, int col) {
-        return row * 4 + col;
-    }
-
-    public static void play(int num) {
-        System.out.println("Click on " + num);
+    /**
+     * @param num the number being moved.
+     * @description: move one or more square.
+     * Start game when the puzzle has been scrambled
+     * *  and have made a valid move.
+     */
+    private void play(int num) {
         if (num == 0) return;
-        if (getState() == SCRAMBLED) {
-            // Start game when the puzzle has been scrambled.
-            setState(SOLVING);
-            setStartTime(System.currentTimeMillis());
-        }
         int index = Arrays.asList(currentState).indexOf(num);
         int row = index / 4, col = index % 4;
         int zero = Arrays.asList(currentState).indexOf(0);
         int row0 = zero / 4, col0 = zero % 4;
+        if (row != row0 && col != col0) {
+            return;
+        }
+        if (state == SCRAMBLED) {
+            state = SOLVING;
+            startTime = System.currentTimeMillis();
+        }
         if (row == row0) {
             // vertical
             if (col > col0) {
@@ -162,7 +193,7 @@ public class Game {
                 }
                 currentState[indexOf(row, col)] = 0;
             }
-        } else if (col == col0) {
+        } else {
             // horizontal
             if (row > row0) {
                 for (int i = row0; i < row; i++) {
@@ -178,12 +209,26 @@ public class Game {
                 currentState[indexOf(row, col)] = 0;
             }
         }
+
         showCurrentState();
-        if (getState() == SOLVING && isWin()) {
+        if (getState() == SOLVING && isSolved()) {
             Toast.makeText(MyApplication.getContext(), "Solved!", Toast.LENGTH_SHORT).show();
-            setEndTime(System.currentTimeMillis());
-            setState(FINISHED);
+            endTime = System.currentTimeMillis();
+            state = FINISHED;
         }
 
+    }
+
+    private class SquareListener implements AppCompatTextView.OnClickListener {
+
+        /**
+         * @param view the square being clicked
+         * @description: listen and handle the move of square
+         */
+        @Override
+        public void onClick(View view) {
+            int num = ((SquareView) view).getNum();
+            play(num);
+        }
     }
 }

@@ -1,4 +1,4 @@
-package cn.cubercsl.slidysim;
+package cn.cubercsl.slidysim.game;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -6,19 +6,29 @@ import android.support.v7.widget.AppCompatTextView;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.View;
 
-public class SquareView extends AppCompatTextView implements AppCompatTextView.OnClickListener {
+public class SquareView extends AppCompatTextView {
 
-    public int num;
+    private int num;
 
     public SquareView(Context context, AttributeSet attr) {
         super(context, attr);
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 60);
         setGravity(Gravity.CENTER);
-        setOnClickListener(this);
     }
 
+    /**
+     * @return the number of the square.
+     */
+    public int getNum() {
+        return num;
+    }
+
+    /**
+     * @param num the number to set
+     * @description: set the number for the Square and change the color.
+     * @see Config#color
+     */
     public void setNum(int num) {
         this.num = num;
         setText(String.valueOf(num));
@@ -33,10 +43,5 @@ public class SquareView extends AppCompatTextView implements AppCompatTextView.O
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public void onClick(View view) {
-        Game.play(num);
     }
 }
