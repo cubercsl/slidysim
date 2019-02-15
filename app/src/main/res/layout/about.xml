@@ -29,6 +29,14 @@
             android:textSize="18sp" />
 
         <TextView
+            android:id="@+id/base"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical|center_horizontal"
+            android:text="@string/base"
+            android:textSize="18sp" />
+
+        <TextView
             android:id="@+id/qq"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

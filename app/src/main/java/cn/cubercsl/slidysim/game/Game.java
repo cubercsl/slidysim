@@ -11,6 +11,8 @@ import java.util.Vector;
 
 import cn.cubercsl.slidysim.MyApplication;
 import cn.cubercsl.slidysim.R;
+import cn.cubercsl.slidysim.gen.ResultDao;
+import cn.cubercsl.slidysim.results.Result;
 
 public class Game {
 
@@ -229,6 +231,8 @@ public class Game {
             Toast.makeText(MyApplication.getContext(), "Solved!", Toast.LENGTH_SHORT).show();
             endTime = System.currentTimeMillis();
             state = FINISHED;
+            ResultDao resultDao = MyApplication.getInstance().getDaoSession().getResultDao();
+            resultDao.insert(new Result(null, getResult(), getStepCount(), startTime));
         }
 
     }

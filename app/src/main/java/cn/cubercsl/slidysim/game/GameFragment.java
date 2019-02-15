@@ -30,7 +30,6 @@ public class GameFragment extends Fragment {
         int min = sec / 60;
         sec %= 60;
         return String.format("%1$02d:%2$02d.%3$03d", min, sec, ms);
-
     }
 
     @Nullable
