@@ -20,20 +20,11 @@ public class ResultDao extends AbstractDao<Result, Long> {
 
     public static final String TABLENAME = "RESULT";
 
-    public ResultDao(DaoConfig config) {
-        super(config);
-    }
-
-
-    public ResultDao(DaoConfig config, DaoSession daoSession) {
-        super(config, daoSession);
-    }
-
     /**
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"RESULT\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY ," + // 0: id
                 "\"TIME\" INTEGER NOT NULL ," + // 1: time
@@ -41,9 +32,16 @@ public class ResultDao extends AbstractDao<Result, Long> {
                 "\"TIME_STAMP\" INTEGER NOT NULL );"); // 3: timeStamp
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+
+    public ResultDao(DaoConfig config) {
+        super(config);
+    }
+
+    public ResultDao(DaoConfig config, DaoSession daoSession) {
+        super(config, daoSession);
+    }
+
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"RESULT\"";
         db.execSQL(sql);
@@ -97,14 +95,8 @@ public class ResultDao extends AbstractDao<Result, Long> {
         entity.setTime(cursor.getLong(offset + 1));
         entity.setMoves(cursor.getInt(offset + 2));
         entity.setTimeStamp(cursor.getLong(offset + 3));
-    }
-
-    @Override
-    protected final Long updateKeyAfterInsert(Result entity, long rowId) {
-        entity.setId(rowId);
-        return rowId;
-    }
-
+     }
+     
     @Override
     public Long getKey(Result entity) {
         if (entity != null) {
@@ -115,13 +107,9 @@ public class ResultDao extends AbstractDao<Result, Long> {
     }
 
     @Override
-    public boolean hasKey(Result entity) {
-        return entity.getId() != null;
-    }
-
-    @Override
-    protected final boolean isEntityUpdateable() {
-        return true;
+    protected final Long updateKeyAfterInsert(Result entity, long rowId) {
+        entity.setId(rowId);
+        return rowId;
     }
 
     /**
@@ -135,4 +123,14 @@ public class ResultDao extends AbstractDao<Result, Long> {
         public final static Property TimeStamp = new Property(3, long.class, "timeStamp", false, "TIME_STAMP");
     }
 
+    @Override
+    public boolean hasKey(Result entity) {
+        return entity.getId() != null;
+    }
+
+    @Override
+    protected final boolean isEntityUpdateable() {
+        return true;
+    }
+    
 }
