@@ -3,14 +3,15 @@ package cn.cubercsl.slidysim.solver;
 import java.util.Vector;
 
 /**
- * @description: Solve the puzzle by IDA*. Too slow for java, just for test.
- * @deprecated
+ * @description: Solve the puzzle by IDA*.
+ * Heuristic Function: Manhattan Distance + Linear Conflict
  */
 public class Solver {
 
-    private static final int MAX = 60;
+    private static final int MAX = 65;
     private static final int dx[] = {-1, 1, 0, 0};
     private static final int dy[] = {0, 0, -1, 1};
+    private static final Heuristic heuristic = new LinearConflict();
     private Vector<Integer> path = new Vector<>();
     private int[] puzzle = new int[16];
 
@@ -20,30 +21,17 @@ public class Solver {
         }
     }
 
-    public static void main(String[] args) {
-        Integer[] test = {1, 2, 3, 4, 6, 7, 8, 0, 5, 10, 11, 12, 9, 13, 14, 15};
-        Solver solver = new Solver(test);
-        System.out.println(solver.solve().toString());
-    }
-
-    private int h() {
-        int h = 0;
-        for (int i = 0; i < 16; i++) {
-            if (puzzle[i] != 0) {
-                h += Math.abs(i / 4 - (puzzle[i] - 1) / 4) + Math.abs(i % 4 - (puzzle[i] - 1) % 4);
-            }
-        }
-        return h;
-    }
-
     private void swap(int x, int y) {
         int t = puzzle[x];
         puzzle[x] = puzzle[y];
         puzzle[y] = t;
     }
 
-    private boolean dfs(int curPos, int currentStep, int prevDirection, int bound) {
-        int limit = h();
+    private boolean depthFirstSearch(int curPos, int currentStep, int prevDirection, int bound) throws InterruptedException {
+        if (Thread.interrupted()) {
+            throw new InterruptedException("User Interrupted.");
+        }
+        int limit = heuristic.calculate(puzzle);
         if (limit == 0) {
             return true;
         }
@@ -62,7 +50,7 @@ public class Solver {
             int nextPos = nx * 4 + ny;
             path.add(puzzle[nextPos]);
             swap(curPos, nextPos);
-            if (dfs(nextPos, currentStep + 1, i, bound)) {
+            if (depthFirstSearch(nextPos, currentStep + 1, i, bound)) {
                 return true;
             }
             swap(curPos, nextPos);
@@ -71,24 +59,37 @@ public class Solver {
         return false;
     }
 
-    private boolean idaStar(int pos) {
-        for (int i = h(); i < MAX; i++) {
-            if (dfs(pos, 0, -1, i)) {
-                return true;
+    private void iterativeDeepeningAStar(int pos) throws RuntimeException, InterruptedException {
+        if (pos == -1) {
+            throw new RuntimeException("No Blank");
+        }
+        for (int i = heuristic.calculate(puzzle); i < MAX; i++) {
+            System.out.println(i);
+            if (depthFirstSearch(pos, 0, -1, i)) {
+                return;
             }
         }
-        return false;
+        throw new RuntimeException("Move Limit Exceed!");
     }
 
-    public Vector<Integer> solve() {
+    /**
+     * @return the solution path
+     * @description: solve the puzzle
+     */
+    public Vector<Integer> solve() throws InterruptedException {
         int pos = -1;
         for (int i = 0; i < 16; i++) {
             if (puzzle[i] == 0) {
                 pos = i;
             }
         }
-        if (pos != -1) {
-            idaStar(pos);
+        try {
+            long startTime = System.currentTimeMillis();
+            System.out.println("Start:");
+            iterativeDeepeningAStar(pos);
+            System.out.println("Time: " + (System.currentTimeMillis() - startTime));
+        } catch (RuntimeException e) {
+            return null;
         }
         return path;
     }

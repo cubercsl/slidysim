@@ -1,7 +1,10 @@
 package cn.cubercsl.slidysim.game;
 
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -19,8 +22,9 @@ import java.util.Vector;
 
 import cn.cubercsl.slidysim.MyApplication;
 import cn.cubercsl.slidysim.R;
-import cn.cubercsl.slidysim.gen.ResultDao;
 import cn.cubercsl.slidysim.results.Result;
+import cn.cubercsl.slidysim.results.gen.ResultDao;
+import cn.cubercsl.slidysim.solver.Solver;
 
 public class GameFragment extends Fragment {
 
@@ -53,8 +57,24 @@ public class GameFragment extends Fragment {
         view.findViewById(R.id.scramble).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                game.scramble();
-                refresh();
+                if (game.state == Game.LOCKED) {
+                    return;
+                }
+                try {
+                    game.scramble();
+                    refresh();
+                } catch (RuntimeException e) {
+                    Toast.makeText(MyApplication.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        view.findViewById(R.id.solve).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (game.state == Game.LOCKED) {
+                    return;
+                }
+                game.solve();
             }
         });
         refresh();
@@ -70,9 +90,10 @@ public class GameFragment extends Fragment {
     }
 
     private class Game {
-        private static final int FINISHED = 0;
-        private static final int SCRAMBLED = 1;
-        private static final int SOLVING = 2;
+        static final int FINISHED = 0;
+        static final int SCRAMBLED = 1;
+        static final int SOLVING = 2;
+        static final int LOCKED = 3;
 
         private SquareView[] squareViews;
         private Integer[] currentState;
@@ -149,7 +170,7 @@ public class GameFragment extends Fragment {
          * @return the result or current time of the solving..
          */
         long getResult() {
-            if (state == SOLVING) {
+            if (state == SOLVING || state == LOCKED) {
                 return System.currentTimeMillis() - startTime;
             }
             if (state == SCRAMBLED) {
@@ -162,7 +183,7 @@ public class GameFragment extends Fragment {
          * @description: if solving,update the step.
          */
         private void updateStepCount() {
-            if (state == SOLVING) {
+            if (state == SOLVING || state == LOCKED) {
                 stepCount++;
             }
         }
@@ -192,7 +213,7 @@ public class GameFragment extends Fragment {
         /**
          * @description: scramble the puzzle
          */
-        public void scramble() {
+        public void scramble() throws RuntimeException {
             System.err.println("Scrambling...");
             Vector<Integer> vector = new Vector<>();
             for (int i = 0; i < 16; i++) {
@@ -225,9 +246,9 @@ public class GameFragment extends Fragment {
             showCurrentState();
             state = SCRAMBLED;
             stepCount = 0;
-            if (isSolvable(num)) {
+            if (!isSolvable(num)) {
+                throw new RuntimeException("The puzzle is unsolvable!");
                 // if the puzzle is solvable,..
-                Toast.makeText(MyApplication.getContext(), "Scrambled!", Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -238,7 +259,9 @@ public class GameFragment extends Fragment {
          * *  and have made a valid move.
          */
         private void play(int num) {
-            if (num == 0) return;
+            if (num == 0) {
+                return;
+            }
             int index = Arrays.asList(currentState).indexOf(num);
             int row = index / 4, col = index % 4;
             int zero = Arrays.asList(currentState).indexOf(0);
@@ -248,8 +271,7 @@ public class GameFragment extends Fragment {
             }
             if (state == SCRAMBLED) {
                 state = SOLVING;
-                startTime = System.currentTimeMillis();
-                startTiming();
+                startTimer();
             }
             if (row == row0) {
                 // vertical
@@ -285,20 +307,73 @@ public class GameFragment extends Fragment {
 
             showCurrentState();
             if (state == SOLVING && isSolved()) {
-                Toast.makeText(MyApplication.getContext(), "Solved!", Toast.LENGTH_SHORT).show();
-                endTime = System.currentTimeMillis();
-                state = FINISHED;
-                stopTiming();
+                stopTimer();
+//                Toast.makeText(MyApplication.getContext(), "Solved!", Toast.LENGTH_SHORT).show();
                 ResultDao resultDao = MyApplication.getInstance().getDaoSession().getResultDao();
                 resultDao.insert(new Result(null, getResult(), getStepCount(), startTime));
             }
+        }
 
+        /**
+         * @description: solve the puzzle
+         */
+        public void solve() {
+            if (state != SCRAMBLED && state != FINISHED) {
+                return;
+            }
+            final Solver solver = new Solver(currentState);
+            final ProgressDialog progressDialog = new ProgressDialog(getContext());
+            progressDialog.setMessage("Solving...");
+            progressDialog.show();
+//            progressDialog.setCancelable(false);
+//            progressDialog.setCanceledOnTouchOutside(false);
+
+            final Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Vector<Integer> path = solver.solve();
+                        progressDialog.dismiss();
+                        stepCount = 0;
+                        // add a lock to the board
+                        state = LOCKED;
+                        startTimer();
+                        for (Integer move : path) {
+                            try {
+                                Thread.sleep(100);
+                                play(move);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        stopTimer();
+                    } catch (RuntimeException e) {
+                        // release the lock
+                        state = SCRAMBLED;
+                        Looper.prepare();
+                        Toast.makeText(MyApplication.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Looper.loop();
+                    } catch (InterruptedException e) {
+                        Looper.prepare();
+                        Toast.makeText(MyApplication.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Looper.loop();
+                    }
+                }
+            });
+            progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(DialogInterface dialogInterface) {
+                    thread.interrupt();
+                }
+            });
+            thread.start();
         }
 
         /**
          * @description: start Time Thread
          */
-        private void startTiming() {
+        private void startTimer() {
+            startTime = System.currentTimeMillis();
             handler.postDelayed(runnable, 20);
         }
 
@@ -306,7 +381,9 @@ public class GameFragment extends Fragment {
          * @description: stop Time Thread
          * force refresh before stop!
          */
-        private void stopTiming() {
+        private void stopTimer() {
+            endTime = System.currentTimeMillis();
+            state = FINISHED;
             refresh();
             handler.removeCallbacks(runnable);
         }
@@ -319,6 +396,10 @@ public class GameFragment extends Fragment {
              */
             @Override
             public void onClick(View view) {
+                if (state == LOCKED) {
+                    // The game is under solving by AI
+                    return;
+                }
                 int num = ((SquareView) view).getNum();
                 play(num);
             }

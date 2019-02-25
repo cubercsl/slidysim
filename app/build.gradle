@@ -19,7 +19,7 @@ android {
     }
     greendao {
         schemaVersion 1
-        daoPackage 'cn.cubercsl.slidysim.gen'
+        daoPackage 'cn.cubercsl.slidysim.results.gen'
         targetGenDir 'src/main/java'
     }
 }

@@ -146,8 +146,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="200dp"
@@ -168,14 +167,27 @@
                 android:gravity="center" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/scramble"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_margin="5dp"
-            android:background="#5babe6"
-            android:gravity="center"
-            android:text="@string/scramble" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/scramble"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_margin="5dp"
+                android:background="#5babe6"
+                android:gravity="center"
+                android:text="@string/scramble" />
+
+            <Button
+                android:id="@+id/solve"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/solve" />
+
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

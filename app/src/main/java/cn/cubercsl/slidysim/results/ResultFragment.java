@@ -16,7 +16,7 @@ import java.util.List;
 
 import cn.cubercsl.slidysim.MyApplication;
 import cn.cubercsl.slidysim.R;
-import cn.cubercsl.slidysim.gen.ResultDao;
+import cn.cubercsl.slidysim.results.gen.ResultDao;
 
 public class ResultFragment extends Fragment {
 
