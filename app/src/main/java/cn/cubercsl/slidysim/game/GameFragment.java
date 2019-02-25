@@ -2,6 +2,7 @@ package cn.cubercsl.slidysim.game;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -334,23 +335,27 @@ public class GameFragment extends Fragment {
                     try {
                         Vector<Integer> path = solver.solve();
                         progressDialog.dismiss();
-                        stepCount = 0;
-                        // add a lock to the board
-                        state = LOCKED;
-                        startTimer();
-                        for (Integer move : path) {
-                            try {
-                                Thread.sleep(100);
-                                play(move);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
+                        AsyncTask asyncTask = new AsyncTask<Integer, Integer, Integer>() {
+
+                            @Override
+                            protected Integer doInBackground(Integer[] path) {
+                                state = LOCKED;
+                                startTimer();
+                                for (Integer move : path) {
+                                    try {
+                                        Thread.sleep(100);
+                                        play(move);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                stopTimer();
+                                return null;
                             }
-                        }
-                        stopTimer();
+                        }.execute(path.toArray(new Integer[path.size()]));
                     } catch (RuntimeException e) {
                         // release the lock
                         state = SCRAMBLED;
-
                         Looper.prepare();
                         Toast.makeText(MyApplication.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                         Looper.loop();
