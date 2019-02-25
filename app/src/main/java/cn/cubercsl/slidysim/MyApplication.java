@@ -6,8 +6,9 @@ import android.database.sqlite.SQLiteDatabase;
 
 import org.greenrobot.greendao.query.QueryBuilder;
 
-import cn.cubercsl.slidysim.gen.DaoMaster;
-import cn.cubercsl.slidysim.gen.DaoSession;
+import cn.cubercsl.slidysim.results.gen.DaoMaster;
+import cn.cubercsl.slidysim.results.gen.DaoSession;
+
 
 public class MyApplication extends Application {
 
