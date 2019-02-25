@@ -350,6 +350,7 @@ public class GameFragment extends Fragment {
                     } catch (RuntimeException e) {
                         // release the lock
                         state = SCRAMBLED;
+
                         Looper.prepare();
                         Toast.makeText(MyApplication.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                         Looper.loop();
