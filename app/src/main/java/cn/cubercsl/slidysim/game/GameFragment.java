@@ -86,11 +86,11 @@ public class GameFragment extends Fragment {
     }
 
     @Override
-    public void onStop() {
+    public void onDestroyView() {
         if (solverThread != null) {
             solverThread.interrupt();
         }
-        super.onStop();
+        super.onDestroyView();
     }
 
     /**

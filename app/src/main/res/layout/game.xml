@@ -174,17 +174,22 @@
 
             <Button
                 android:id="@+id/scramble"
+                style="?android:attr/buttonStyle"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_margin="5dp"
-                android:background="#5babe6"
+                android:background="@drawable/square_view_background_blue"
                 android:gravity="center"
                 android:text="@string/scramble" />
 
             <Button
                 android:id="@+id/solve"
-                android:layout_width="match_parent"
+                style="?android:attr/buttonStyle"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_margin="5dp"
+                android:background="@drawable/square_view_background_green"
+                android:gravity="center"
                 android:text="@string/solve" />
 
         </LinearLayout>
