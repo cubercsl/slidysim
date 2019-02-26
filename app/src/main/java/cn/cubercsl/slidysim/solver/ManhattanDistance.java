@@ -2,8 +2,6 @@ package cn.cubercsl.slidysim.solver;
 
 public class ManhattanDistance implements Heuristic {
 
-    protected static final int SIZE = 4;
-
     @Override
     public int calculate(int[] cells) {
         int counter = 0;
@@ -12,10 +10,10 @@ public class ManhattanDistance implements Heuristic {
             if (value == 0) {
                 continue;
             }
-            int row = i / SIZE;
-            int col = i % SIZE;
-            int expectRow = (value - 1) / SIZE;
-            int expectCol = (value - 1) % SIZE;
+            int row = i / 4;
+            int col = i % 4;
+            int expectRow = (value - 1) / 4;
+            int expectCol = (value - 1) % 4;
             int difference = Math.abs(expectCol - col) + Math.abs(expectRow - row);
             counter += difference;
         }

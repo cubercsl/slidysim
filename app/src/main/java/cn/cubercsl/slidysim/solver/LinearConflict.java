@@ -1,8 +1,9 @@
 package cn.cubercsl.slidysim.solver;
 
 /**
- * @description: An Improved Admissible Heuristic
- * http://www.aaai.org/Papers/AAAI/1996/AAAI96-178.pdf
+ * @description: Manhattan Distance + Linear Conflict
+ * O. Hansson, A. Mayer, and M. Yung, "Criticizing Solutions to Relaxed Models Yields Powerful Admissible Heuristics,"
+ * Information Sciences, Vol. 63, Issue 3, pp. 207-227, 1992.
  */
 public class LinearConflict extends ManhattanDistance implements Heuristic {
 
@@ -16,12 +17,12 @@ public class LinearConflict extends ManhattanDistance implements Heuristic {
 
     private int linearVerticalConflict(int[] cells) {
         int linearConflict = 0;
-        for (int row = 0; row < SIZE; row++) {
+        for (int row = 0; row < 4; row++) {
             int max = -1;
-            for (int col = 0; col < SIZE; col++) {
-                int cellValue = cells[row * SIZE + col];
+            for (int col = 0; col < 4; col++) {
+                int cellValue = cells[row * 4 + col];
                 // is tile in its goal row ?
-                if (cellValue != 0 && (cellValue - 1) / SIZE == row) {
+                if (cellValue != 0 && (cellValue - 1) / 4 == row) {
                     if (cellValue > max) {
                         max = cellValue;
                     } else {
@@ -39,12 +40,12 @@ public class LinearConflict extends ManhattanDistance implements Heuristic {
 
     private int linearHorizontalConflict(int[] cells) {
         int linearConflict = 0;
-        for (int col = 0; col < SIZE; col++) {
+        for (int col = 0; col < 4; col++) {
             int max = -1;
-            for (int row = 0; row < SIZE; row++) {
-                int cellValue = cells[row * SIZE + col];
+            for (int row = 0; row < 4; row++) {
+                int cellValue = cells[row * 4 + col];
                 // is tile in its goal row ?
-                if (cellValue != 0 && cellValue % SIZE == col + 1) {
+                if (cellValue != 0 && cellValue % 4 == col + 1) {
                     if (cellValue > max) {
                         max = cellValue;
                     } else {

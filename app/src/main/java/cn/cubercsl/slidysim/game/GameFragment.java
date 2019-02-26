@@ -1,10 +1,12 @@
 package cn.cubercsl.slidysim.game;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
@@ -30,6 +33,7 @@ public class GameFragment extends Fragment {
 
     private static Game game;
     private TextView timeView, moveView;
+    private Thread solverThread;
 
     /**
      * @param time the time to format
@@ -81,12 +85,36 @@ public class GameFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onStop() {
+        if (solverThread != null) {
+            solverThread.interrupt();
+        }
+        super.onStop();
+    }
+
     /**
      * @description: refresh the time and move.
      */
     public void refresh() {
         timeView.setText(getTimeStr(game.getResult()));
         moveView.setText("Moves: " + game.getStepCount());
+    }
+
+    static class GamePlayer extends Handler {
+        WeakReference<Activity> activityWeakReference;
+
+        GamePlayer(Activity activity) {
+            activityWeakReference = new WeakReference<Activity>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            final Activity activity = activityWeakReference.get();
+            if (activity != null) {
+                game.play(msg.what);
+            }
+        }
     }
 
     private class Game {
@@ -258,7 +286,7 @@ public class GameFragment extends Fragment {
          * Start game when the puzzle has been scrambled
          * *  and have made a valid move.
          */
-        private void play(int num) {
+        private synchronized void play(int num) {
             if (num == 0) {
                 return;
             }
@@ -326,31 +354,32 @@ public class GameFragment extends Fragment {
             progressDialog.setMessage("Solving...");
             progressDialog.show();
 //            progressDialog.setCancelable(false);
-//            progressDialog.setCanceledOnTouchOutside(false);
-
-            final Thread thread = new Thread(new Runnable() {
+            progressDialog.setCanceledOnTouchOutside(false);
+            final GamePlayer player = new GamePlayer(getActivity());
+            solverThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         Vector<Integer> path = solver.solve();
                         progressDialog.dismiss();
-                        stepCount = 0;
-                        // add a lock to the board
                         state = LOCKED;
+                        stepCount = 0;
                         startTimer();
                         for (Integer move : path) {
                             try {
                                 Thread.sleep(100);
-                                play(move);
+                                Message msg = new Message();
+                                msg.what = move;
+                                player.sendMessage(msg);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
+                                break;
                             }
                         }
                         stopTimer();
                     } catch (RuntimeException e) {
                         // release the lock
                         state = SCRAMBLED;
-
                         Looper.prepare();
                         Toast.makeText(MyApplication.getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
                         Looper.loop();
@@ -361,13 +390,14 @@ public class GameFragment extends Fragment {
                     }
                 }
             });
+
             progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialogInterface) {
-                    thread.interrupt();
+                    solverThread.interrupt();
                 }
             });
-            thread.start();
+            solverThread.start();
         }
 
         /**
@@ -407,3 +437,5 @@ public class GameFragment extends Fragment {
         }
     }
 }
+
+

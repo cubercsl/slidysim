@@ -8,10 +8,10 @@ import java.util.Vector;
  */
 public class Solver {
 
-    private static final int MAX = 65;
+    private static final int MAX = 80;
     private static final int dx[] = {-1, 1, 0, 0};
     private static final int dy[] = {0, 0, -1, 1};
-    private static final Heuristic heuristic = new LinearConflict();
+    private static final Heuristic heuristic = new PatternDataBase();
     private Vector<Integer> path = new Vector<>();
     private int[] puzzle = new int[16];
 
@@ -93,5 +93,4 @@ public class Solver {
         }
         return path;
     }
-
 }
